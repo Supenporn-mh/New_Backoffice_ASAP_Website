@@ -106,20 +106,32 @@
         </el-table-column>
       </el-table>
     </div>
-    <!-- Floating Save Button -->
-    <div v-if="hasUnsavedChanges" class="floating-save">
-      <el-button type="success" size="large" :loading="savingOrder" @click="saveOrder">
-        <el-icon><Check /></el-icon>
-        <span style="margin-left: 8px;">บันทึกลำดับ</span>
-      </el-button>
-    </div>
+    <!-- Bottom Action Bar -->
+    <transition name="bar-slide">
+      <div v-if="hasUnsavedChanges" class="bottom-action-bar">
+        <div class="bar-info">
+          <el-icon class="bar-info__icon"><WarningFilled /></el-icon>
+          <span>มีการเปลี่ยนแปลงลำดับที่ยังไม่ได้บันทึก</span>
+        </div>
+        <div class="bar-actions">
+          <button class="btn-cancel" :disabled="savingOrder" @click="cancelChanges">
+            ยกเลิก
+          </button>
+          <button class="btn-save" :disabled="savingOrder" @click="saveOrder">
+            <span v-if="savingOrder" class="btn-save__spinner" />
+            <el-icon v-else><Check /></el-icon>
+            <span>{{ savingOrder ? 'กำลังบันทึก...' : 'บันทึกลำดับ' }}</span>
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Rank, Check, Picture, Warning } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Rank, Check, Picture, Warning, WarningFilled } from '@element-plus/icons-vue'
 import Sortable from 'sortablejs'
 import { useApi } from '@/composables/useApi'
 
@@ -140,6 +152,7 @@ const fetchBanners = async () => {
   loading.value = true
   try {
     banners.value = await getBanners()
+    originalBanners.value = banners.value.map(b => ({ ...b }))
   } catch (error) {
     ElMessage.error('ไม่สามารถโหลดข้อมูลได้')
   } finally {
@@ -189,13 +202,34 @@ onMounted(() => {
 
 const hasUnsavedChanges = ref(false)
 const savingOrder = ref(false)
+const originalBanners = ref([])
+
+const cancelChanges = () => {
+  banners.value = originalBanners.value.map(b => ({ ...b }))
+  banners.value.forEach((b, i) => { b.order = i + 1 })
+  hasUnsavedChanges.value = false
+}
 
 const saveOrder = async () => {
+  try {
+    await ElMessageBox.confirm(
+      'บันทึกลำดับการแสดงผลใหม่?',
+      'ยืนยัน',
+      {
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก',
+        distinguishCancelAndClose: true
+      }
+    )
+  } catch {
+    return
+  }
   savingOrder.value = true
   try {
     const newOrderIds = banners.value.map(b => b.id)
     await reorderBanners(newOrderIds)
     ElMessage.success('บันทึกลำดับเรียบร้อย')
+    originalBanners.value = banners.value.map(b => ({ ...b }))
     hasUnsavedChanges.value = false
   } catch (error) {
     ElMessageBox.alert('ทำรายการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'แจ้งเตือน', {
@@ -302,24 +336,124 @@ const initSortable = () => {
   gap: 4px;
 }
 
-.floating-save {
+.bottom-action-bar {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 999;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  animation: slideUp 0.3s ease-out;
+  bottom: 0;
+  left: 260px; // offset sidebar
+  right: 0;
+  z-index: 99;
+  background: #fff;
+  border-top: 1px solid #E5E7EB;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+
+  .bar-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 32px;
+    background: #FFFBEB;
+    border-bottom: 1px solid #FDE68A;
+    font-size: 13px;
+    color: #92400E;
+
+    &__icon {
+      font-size: 14px;
+      color: #D97706;
+      flex-shrink: 0;
+    }
+  }
+
+  .bar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+  }
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 24px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  color: #6B7280;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: #9CA3AF;
+    background: #F9FAFB;
+    color: #374151;
   }
-  to {
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 28px;
+  border: none;
+  border-radius: 8px;
+  background: #FF595A;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(255, 89, 90, 0.3), 0 1px 2px rgba(255, 89, 90, 0.2);
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #E54849;
+    box-shadow: 0 4px 10px rgba(255, 89, 90, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
     transform: translateY(0);
-    opacity: 1;
+    box-shadow: 0 1px 3px rgba(255, 89, 90, 0.25);
   }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &__spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+}
+
+.bar-slide-enter-active,
+.bar-slide-leave-active {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.bar-slide-enter-from,
+.bar-slide-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

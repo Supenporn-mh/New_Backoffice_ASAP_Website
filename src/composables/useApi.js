@@ -2061,6 +2061,15 @@ export const useApi = () => {
     return false
   }
 
+  const reorderCarCategories = async (newOrder) => {
+    newOrder.forEach((id, index) => {
+      const cat = mockCarCategories.value.find(c => c.id === id)
+      if (cat) cat.order = index + 1
+    })
+    mockCarCategories.value.sort((a, b) => a.order - b.order)
+    return true
+  }
+
   // ===== Car Brands & Models =====
   const getCarBrands = async () => {
     return mockCarBrands.value.map(brand => ({
@@ -2239,6 +2248,7 @@ export const useApi = () => {
     createCarCategory,
     updateCarCategory,
     deleteCarCategory,
+    reorderCarCategories,
     // Car Brands & Models
     getCarBrands,
     getCarBrand,

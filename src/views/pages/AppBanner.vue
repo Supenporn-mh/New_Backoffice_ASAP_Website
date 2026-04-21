@@ -307,16 +307,15 @@ onMounted(() => fetchData())
 <style lang="scss" scoped>
 /* ===== PREVIEWS WRAPPER ===== */
 .previews-wrapper {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 280px;
   gap: 32px;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: start;
   margin-bottom: 8px;
 }
 
 .preview-block {
-  flex: 1;
-  min-width: 280px;
+  min-width: 0;
 }
 
 .preview-label {

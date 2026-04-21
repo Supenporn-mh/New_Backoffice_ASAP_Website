@@ -53,14 +53,14 @@
           </el-col>
         </el-row>
 
-        <el-form-item prop="branches">
-          <div class="branch-selection-wrapper">
+        <el-form-item label="เลือกสาขาที่อยู่ภายใต้การบริหารจัดการของจังหวัดนี้" prop="branches">
+          <div style="width: 100%;">
             <el-select
               v-model="form.branches"
               multiple
               filterable
               placeholder="เลือกสาขาเพิ่ม"
-              style="width: 100%; margin-bottom: 24px;"
+              style="width: 100%; margin-bottom: 16px;"
             >
               <el-option
                 v-for="branch in availableBranches"
@@ -69,43 +69,43 @@
                 :value="branch.id"
               />
             </el-select>
-          </div>
 
-          <div v-if="selectedBranchesDetails.length > 0" class="selected-branches-list">
-            <div v-for="branch in selectedBranchesDetails" :key="branch.id" class="branch-item-card">
-              <div class="branch-item-info">
-                <div class="branch-item-header">
-                  <div class="branch-badges">
-                    <el-tag size="small" :type="branch.type === 'airport' ? 'primary' : 'success'" effect="light" round>
-                      {{ branch.type === 'airport' ? 'สนามบิน' : 'สาขาปกติ' }}
-                    </el-tag>
-                    <el-tag v-if="branch.isMaintenance" size="small" type="danger" effect="dark" round>
-                      Maintenance
-                    </el-tag>
+            <div v-if="selectedBranchesDetails.length > 0" class="selected-branches-list">
+              <div v-for="branch in selectedBranchesDetails" :key="branch.id" class="branch-item-card">
+                <div class="branch-item-info">
+                  <div class="branch-item-header">
+                    <div class="branch-badges">
+                      <el-tag size="small" :type="branch.type === 'airport' ? 'primary' : 'success'" effect="light" round>
+                        {{ branch.type === 'airport' ? 'สนามบิน' : 'สาขาปกติ' }}
+                      </el-tag>
+                      <el-tag v-if="branch.isMaintenance" size="small" type="danger" effect="dark" round>
+                        Maintenance
+                      </el-tag>
+                    </div>
+                  </div>
+                  <div class="branch-name">{{ branch.name }}</div>
+                  <div class="branch-item-meta">
+                    <span v-if="branch.mapEmbed" class="has-map">
+                      <el-icon><LocationInformation /></el-icon> มีพิกัดแผนที่แล้ว
+                    </span>
+                    <span v-else class="no-map">
+                      <el-icon><MapLocation /></el-icon> ยังไม่มีพิกัด
+                    </span>
                   </div>
                 </div>
-                <div class="branch-name">{{ branch.name }}</div>
-                <div class="branch-item-meta">
-                  <span v-if="branch.mapEmbed" class="has-map">
-                    <el-icon><LocationInformation /></el-icon> มีพิกัดแผนที่แล้ว
-                  </span>
-                  <span v-else class="no-map">
-                    <el-icon><MapLocation /></el-icon> ยังไม่มีพิกัด
-                  </span>
+                <div class="branch-item-actions">
+                  <el-button size="small" @click="openBranchEdit(branch)">
+                    <el-icon><Setting /></el-icon>
+                    <span>ตั้งค่า</span>
+                  </el-button>
+                  <el-button size="small" type="danger" plain class="btn-remove" @click="removeBranch(branch.id)">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
                 </div>
               </div>
-              <div class="branch-item-actions">
-                <el-button size="small" @click="openBranchEdit(branch)">
-                  <el-icon><Setting /></el-icon>
-                  <span>ตั้งค่า</span>
-                </el-button>
-                <el-button size="small" type="danger" plain class="btn-remove" @click="removeBranch(branch.id)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
             </div>
+
           </div>
-          <div class="field-hint">เลือกสาขาที่อยู่ภายใต้การบริหารจัดการของจังหวัดนี้</div>
         </el-form-item>
       </div>
 

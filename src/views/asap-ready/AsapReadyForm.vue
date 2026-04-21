@@ -50,7 +50,7 @@
           <span class="size-hint">แนะนำขนาด 420 x 470 px</span>
         </div>
         <el-tabs type="card" class="lang-tabs">
-          <el-tab-pane label="🇹🇭 ไทย">
+          <el-tab-pane label="TH ไทย">
             <div class="image-upload-wrapper">
               <el-upload
                 class="image-uploader"
@@ -83,7 +83,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="🇬🇧 EN">
+          <el-tab-pane label="EN อังกฤษ">
             <div class="image-upload-wrapper">
               <el-upload
                 class="image-uploader"
@@ -116,7 +116,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="🇨🇳 中文">
+          <el-tab-pane label="CN จีน">
             <div class="image-upload-wrapper">
               <el-upload
                 class="image-uploader"
@@ -159,7 +159,7 @@
           <span class="size-hint">แนะนำขนาด 300 x 335 px</span>
         </div>
         <el-tabs type="card" class="lang-tabs">
-          <el-tab-pane label="🇹🇭 ไทย">
+          <el-tab-pane label="TH ไทย">
             <div class="image-upload-wrapper">
               <el-upload
                 class="image-uploader"
@@ -192,7 +192,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="🇬🇧 EN">
+          <el-tab-pane label="EN อังกฤษ">
             <div class="image-upload-wrapper">
               <el-upload
                 class="image-uploader"
@@ -225,7 +225,7 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="🇨🇳 中文">
+          <el-tab-pane label="CN จีน">
             <div class="image-upload-wrapper">
               <el-upload
                 class="image-uploader"
@@ -280,13 +280,14 @@ import { useApi } from '@/composables/useApi'
 
 const route = useRoute()
 const router = useRouter()
-const { getAsapReadyItem, createAsapReadyItem, updateAsapReadyItem } = useApi()
+const { getAsapReadyItem, getAsapReadyItems, createAsapReadyItem, updateAsapReadyItem } = useApi()
 
 const formRef = ref()
 const saving = ref(false)
 const isDirty = ref(false)
 const desktopImageError = ref('')
 const mobileImageError = ref('')
+const existingOrders = ref([])
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -304,7 +305,19 @@ watch(() => form, () => { isDirty.value = true }, { deep: true })
 
 const rules = {
   title: [{ required: true, message: 'กรุณากรอกชื่อรายการ', trigger: 'blur' }],
-  order: [{ required: true, message: 'กรุณากรอกลำดับ', trigger: 'blur' }]
+  order: [
+    { required: true, message: 'กรุณากรอกลำดับ', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (existingOrders.value.includes(value)) {
+          callback(new Error('ลำดับนี้มีการใช้งานแล้ว กรุณาเลือกลำดับอื่น'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ]
 }
 
 const handleDesktopImageChange = (file, lang) => {
@@ -363,6 +376,16 @@ const handleSubmit = async () => {
 }
 
 const loadItem = async () => {
+  try {
+    const list = await getAsapReadyItems()
+    if (isEdit.value) {
+      existingOrders.value = list.filter(i => String(i.id) !== String(route.params.id)).map(i => i.order)
+    } else {
+      existingOrders.value = list.map(i => i.order)
+      form.order = list.length + 1
+    }
+  } catch {}
+
   if (!isEdit.value) return
   try {
     const data = await getAsapReadyItem(route.params.id)

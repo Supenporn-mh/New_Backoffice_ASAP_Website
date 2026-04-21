@@ -27,74 +27,102 @@
       </div>
     </div>
 
-    <!-- Category Cards -->
-    <div class="content-card" v-loading="loading">
-      <div class="category-grid">
-        <div
-          v-for="category in categories"
-          :key="category.id"
-          class="category-card"
-          :class="{ 'is-inactive': !category.isActive }"
-        >
-          <div class="card-image">
+    <!-- Table -->
+    <div class="content-card">
+      <el-table ref="tableRef" v-loading="loading" :data="categories" style="width: 100%" row-key="id">
+
+        <el-table-column width="50" align="center">
+          <template #default>
+            <el-icon class="drag-handle"><Rank /></el-icon>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="order" label="ลำดับ" width="80" align="center" />
+
+        <el-table-column label="รูปภาพ" width="120" align="center">
+          <template #default="{ row }">
             <el-image
-              v-if="category.image"
-              :src="category.image"
+              v-if="row.image"
+              :src="row.image"
               fit="cover"
-              :preview-src-list="[category.image]"
+              style="width: 72px; height: 52px; border-radius: 6px;"
+              :preview-src-list="[row.image]"
             />
-            <div v-else class="image-placeholder">
-              <el-icon :size="40"><Picture /></el-icon>
+            <div v-else class="image-empty">
+              <el-icon><Picture /></el-icon>
             </div>
-            <div class="card-badge">
-              <span class="order-badge">#{{ category.order }}</span>
-            </div>
-            <div class="card-status">
-              <el-tag :type="category.isActive ? 'success' : 'info'" size="small" effect="dark">
-                {{ category.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
-              </el-tag>
-            </div>
-          </div>
+          </template>
+        </el-table-column>
 
-          <div class="card-content">
-            <h3 class="card-title">{{ category.name }}</h3>
-            <div class="card-meta">
-              <div class="sippcode-badges">
-                <code
-                  v-for="(code, idx) in (category.sippcodes || [])"
-                  :key="idx"
-                  class="sippcode-badge"
-                >{{ code }}</code>
-              </div>
-              <span class="car-count">
-                <el-icon><Van /></el-icon>
-                {{ category.carCount || 0 }} รุ่น
-              </span>
-            </div>
-          </div>
+        <el-table-column prop="name" label="ชื่อประเภทกลุ่มรถ" min-width="180" />
 
-          <div class="card-actions">
+        <el-table-column label="Sippcode" min-width="200">
+          <template #default="{ row }">
+            <div class="sippcode-badges">
+              <code
+                v-for="(code, idx) in (row.sippcodes || [])"
+                :key="idx"
+                class="sippcode-badge"
+              >{{ code }}</code>
+              <span v-if="!row.sippcodes?.length" class="text-muted">-</span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="จำนวนรุ่น" width="110" align="center">
+          <template #default="{ row }">
+            <span class="car-count">
+              <el-icon><Van /></el-icon>
+              {{ row.carCount || 0 }} รุ่น
+            </span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="แสดงผลบนเว็บ" width="130" align="center">
+          <template #default="{ row }">
             <el-switch
-              v-model="category.isActive"
-              size="small"
+              v-model="row.isActive"
               inline-prompt
               active-text="แสดง"
               inactive-text="ซ่อน"
-              @change="handleStatusChange(category)"
+              @change="handleStatusChange(row)"
             />
-            <div class="action-buttons">
-              <el-button type="primary" size="small" circle @click="openDialog(category)">
+          </template>
+        </el-table-column>
+
+        <el-table-column label="จัดการ" width="120" align="center">
+          <template #default="{ row }">
+            <div class="table-actions">
+              <el-button type="primary" text @click="openDialog(row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
-              <el-button type="danger" size="small" circle @click="handleDelete(category)">
+              <el-button type="danger" text @click="handleDelete(row)">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>
-          </div>
-        </div>
+          </template>
+        </el-table-column>
 
-      </div>
+      </el-table>
     </div>
+
+    <!-- Bottom Action Bar -->
+    <transition name="bar-slide">
+      <div v-if="hasUnsavedChanges" class="bottom-action-bar">
+        <div class="bar-info">
+          <el-icon class="bar-info__icon"><WarningFilled /></el-icon>
+          <span>มีการเปลี่ยนแปลงลำดับที่ยังไม่ได้บันทึก</span>
+        </div>
+        <div class="bar-actions">
+          <button class="btn-cancel" :disabled="savingOrder" @click="cancelChanges">ยกเลิก</button>
+          <button class="btn-save" :disabled="savingOrder" @click="saveOrder">
+            <span v-if="savingOrder" class="btn-save__spinner" />
+            <el-icon v-else><Check /></el-icon>
+            <span>{{ savingOrder ? 'กำลังบันทึก...' : 'บันทึกลำดับ' }}</span>
+          </button>
+        </div>
+      </div>
+    </transition>
 
     <!-- Dialog -->
     <el-dialog
@@ -152,40 +180,20 @@
         </el-row>
 
         <el-form-item label="Sippcode" required>
-          <div class="sippcode-list">
-            <div
-              v-for="(code, index) in form.sippcodes"
-              :key="index"
-              class="sippcode-item"
-            >
-              <el-select
-                v-model="form.sippcodes[index]"
-                placeholder="เลือก Sippcode"
-                filterable
-              >
-                <el-option
-                  v-for="item in sippcodeOptions"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                  :disabled="form.sippcodes.includes(item) && form.sippcodes[index] !== item"
-                />
-              </el-select>
-              <el-button
-                v-if="form.sippcodes.length > 1"
-                type="danger"
-                circle
-                size="small"
-                @click="removeSippcode(index)"
-              >
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </div>
-            <div class="add-sippcode" @click="addSippcode">
-              <el-icon><Plus /></el-icon>
-              <span>Add another</span>
-            </div>
-          </div>
+          <el-select
+            v-model="form.sippcodes"
+            multiple
+            filterable
+            placeholder="เลือก Sippcode"
+            style="width: 100%;"
+          >
+            <el-option
+              v-for="item in sippcodeOptions"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="สถานะ">
@@ -210,16 +218,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useApi } from '@/composables/useApi'
-import { Check, Van } from '@element-plus/icons-vue'
+import { Check, Van, Edit, Delete, Picture, Plus, Rank, WarningFilled } from '@element-plus/icons-vue'
+import Sortable from 'sortablejs'
 
 const {
   getCarCategories,
   createCarCategory,
   updateCarCategory,
-  deleteCarCategory
+  deleteCarCategory,
+  reorderCarCategories
 } = useApi()
 
 const loading = ref(false)
@@ -228,6 +238,7 @@ const dialogVisible = ref(false)
 const categories = ref([])
 const editingCategory = ref(null)
 const formRef = ref()
+const tableRef = ref()
 const sippcodeOptions = ['ECAR', 'CCAR', 'SCAR', 'IFAR', 'EVAR', 'HCAR', 'HCMR', 'LCAR', 'PCAR', 'FCAR', 'PFAR', 'LFAR', 'SFAR']
 
 const activeCount = computed(() => categories.value.filter(c => c.isActive).length)
@@ -235,7 +246,7 @@ const totalCars = computed(() => categories.value.reduce((sum, c) => sum + (c.ca
 
 const form = reactive({
   name: '',
-  sippcodes: [''],
+  sippcodes: [],
   image: '',
   order: 1,
   isActive: true
@@ -246,13 +257,6 @@ const rules = {
   order: [{ required: true, message: 'กรุณากรอกลำดับ', trigger: 'blur' }]
 }
 
-const addSippcode = () => {
-  form.sippcodes.push('')
-}
-
-const removeSippcode = (index) => {
-  form.sippcodes.splice(index, 1)
-}
 
 const handleImageChange = (file) => {
   const reader = new FileReader()
@@ -266,10 +270,54 @@ const removeImage = () => {
   form.image = ''
 }
 
+const hasUnsavedChanges = ref(false)
+const savingOrder = ref(false)
+const originalItems = ref([])
+
+const cancelChanges = () => {
+  categories.value = originalItems.value.map(c => ({ ...c }))
+  categories.value.forEach((c, i) => { c.order = i + 1 })
+  hasUnsavedChanges.value = false
+}
+
+const saveOrder = async () => {
+  savingOrder.value = true
+  try {
+    const newOrderIds = categories.value.map(c => c.id)
+    await reorderCarCategories(newOrderIds)
+    ElMessage.success('บันทึกลำดับเรียบร้อย')
+    originalItems.value = categories.value.map(c => ({ ...c }))
+    hasUnsavedChanges.value = false
+  } catch {
+    ElMessage.error('ทำรายการไม่สำเร็จ กรุณาลองใหม่')
+    fetchCategories()
+  } finally {
+    savingOrder.value = false
+  }
+}
+
+const initSortable = () => {
+  if (!tableRef.value) return
+  const el = tableRef.value.$el.querySelector('tbody')
+  if (!el) return
+  Sortable.create(el, {
+    handle: '.drag-handle',
+    animation: 150,
+    onEnd: ({ oldIndex, newIndex }) => {
+      if (oldIndex === newIndex) return
+      const moved = categories.value.splice(oldIndex, 1)[0]
+      categories.value.splice(newIndex, 0, moved)
+      categories.value.forEach((c, i) => { c.order = i + 1 })
+      hasUnsavedChanges.value = true
+    }
+  })
+}
+
 const fetchCategories = async () => {
   loading.value = true
   try {
     categories.value = await getCarCategories()
+    originalItems.value = categories.value.map(c => ({ ...c }))
   } catch (error) {
     ElMessage.error('ไม่สามารถโหลดข้อมูลได้')
   } finally {
@@ -289,7 +337,7 @@ const openDialog = (category = null) => {
     })
   } else {
     form.name = ''
-    form.sippcodes = ['']
+    form.sippcodes = []
     form.image = ''
     form.order = categories.value.length + 1
     form.isActive = true
@@ -355,7 +403,7 @@ const handleDelete = async (row) => {
 }
 
 onMounted(() => {
-  fetchCategories()
+  fetchCategories().then(() => nextTick(() => initSortable()))
 })
 </script>
 
@@ -416,132 +464,53 @@ onMounted(() => {
   }
 }
 
-// Category Grid
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+.image-empty {
+  width: 72px;
+  height: 52px;
+  border-radius: 6px;
+  background: #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  margin: 0 auto;
+  font-size: 20px;
 }
 
-.category-card {
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+.sippcode-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
-  &:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transform: translateY(-4px);
-  }
+.sippcode-badge {
+  background: #e8f5e9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #2e7d32;
+  font-weight: 500;
+}
 
-  &.is-inactive {
-    opacity: 0.6;
+.car-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #666;
 
-    .card-image {
-      filter: grayscale(50%);
-    }
-  }
+  .el-icon { color: #FF595A; }
+}
 
-  .card-image {
-    position: relative;
-    height: 160px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+.text-muted {
+  color: #9CA3AF;
+  font-size: 13px;
+}
 
-    .el-image {
-      width: 100%;
-      height: 100%;
-    }
-
-    .image-placeholder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ccc;
-    }
-
-    .card-badge {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-
-      .order-badge {
-        background: rgba(0, 0, 0, 0.6);
-        color: #fff;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-      }
-    }
-
-    .card-status {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-    }
-  }
-
-  .card-content {
-    padding: 16px;
-
-    .card-title {
-      margin: 0 0 12px 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #1D2433;
-    }
-
-    .card-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-
-      .sippcode-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-
-      .sippcode-badge {
-        background: #e8f5e9;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        color: #2e7d32;
-        font-weight: 500;
-      }
-
-      .car-count {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 13px;
-        color: #666;
-
-        .el-icon {
-          color: #FF595A;
-        }
-      }
-    }
-  }
-
-  .card-actions {
-    padding: 12px 16px;
-    border-top: 1px solid #f0f2f5;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-    }
-  }
+.table-actions {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
 }
 
 // Dialog styles
@@ -608,42 +577,102 @@ onMounted(() => {
   }
 }
 
-// Sippcode list in dialog
-.sippcode-list {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+
+.drag-handle {
+  cursor: move;
+  color: #9CA3AF;
+  &:hover { color: #6B7280; }
 }
 
-.sippcode-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.bottom-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  z-index: 99;
+  background: #fff;
+  border-top: 1px solid #E5E7EB;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
 
-  .el-input {
-    flex: 1;
+  .bar-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 32px;
+    background: #FFFBEB;
+    border-bottom: 1px solid #FDE68A;
+    font-size: 13px;
+    color: #92400E;
+
+    &__icon { font-size: 14px; color: #D97706; flex-shrink: 0; }
+  }
+
+  .bar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
   }
 }
 
-.add-sippcode {
-  display: flex;
+.btn-cancel {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #67c23a;
+  padding: 9px 24px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  color: #6B7280;
   font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
-  padding: 8px 0;
-  transition: color 0.3s;
+  transition: all 0.15s;
 
-  &:hover {
-    color: #529b2e;
-  }
+  &:hover:not(:disabled) { border-color: #9CA3AF; background: #F9FAFB; color: #374151; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
 
-  .el-icon {
-    font-size: 16px;
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 28px;
+  border: none;
+  border-radius: 8px;
+  background: #FF595A;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(255, 89, 90, 0.3);
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) { background: #E54849; transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+  &__spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
   }
 }
+
+.bar-slide-enter-active, .bar-slide-leave-active {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+.bar-slide-enter-from, .bar-slide-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 // Button icon spacing
 :deep(.el-button) {
@@ -651,8 +680,6 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
 
-  .el-icon {
-    margin: 0;
-  }
+  .el-icon { margin: 0; }
 }
 </style>

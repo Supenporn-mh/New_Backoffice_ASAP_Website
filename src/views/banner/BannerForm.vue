@@ -57,7 +57,7 @@
       <div class="form-section">
         <div class="form-section-title">รูปภาพ Desktop <span class="size-hint">แนะนำขนาด 1280 x 500 px</span></div>
         <el-tabs type="card" class="lang-tabs">
-          <el-tab-pane label="🇹🇭 ไทย">
+          <el-tab-pane label="TH ไทย">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleDesktopImageChange(f, 'th')">
@@ -72,7 +72,7 @@
               <el-input v-model="form.imageAltDesktop.th" placeholder="Alt Text (ภาษาไทย)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇬🇧 EN">
+          <el-tab-pane label="EN อังกฤษ">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleDesktopImageChange(f, 'en')">
@@ -87,7 +87,7 @@
               <el-input v-model="form.imageAltDesktop.en" placeholder="Alt Text (English)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇨🇳 中文">
+          <el-tab-pane label="CN จีน">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleDesktopImageChange(f, 'zh')">
@@ -109,7 +109,7 @@
       <div class="form-section">
         <div class="form-section-title">รูปภาพ Mobile <span class="size-hint">แนะนำขนาด 390 x 300 px</span></div>
         <el-tabs type="card" class="lang-tabs">
-          <el-tab-pane label="🇹🇭 ไทย">
+          <el-tab-pane label="TH ไทย">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleMobileImageChange(f, 'th')">
@@ -124,7 +124,7 @@
               <el-input v-model="form.imageAltMobile.th" placeholder="Alt Text (ภาษาไทย)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇬🇧 EN">
+          <el-tab-pane label="EN อังกฤษ">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleMobileImageChange(f, 'en')">
@@ -139,7 +139,7 @@
               <el-input v-model="form.imageAltMobile.en" placeholder="Alt Text (English)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇨🇳 中文">
+          <el-tab-pane label="CN จีน">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleMobileImageChange(f, 'zh')">
@@ -176,13 +176,14 @@ import { useApi } from '@/composables/useApi'
 
 const route = useRoute()
 const router = useRouter()
-const { getBanner, createBanner, updateBanner } = useApi()
+const { getBanner, getBanners, createBanner, updateBanner } = useApi()
 
 const formRef = ref()
 const saving = ref(false)
 const isDirty = ref(false)
 const desktopImageError = ref('')
 const mobileImageError = ref('')
+const existingOrders = ref([])
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -204,7 +205,17 @@ const rules = {
     { required: true, message: 'กรุณากรอกชื่อแบนเนอร์', trigger: 'blur' }
   ],
   order: [
-    { required: true, message: 'กรุณากรอกลำดับ', trigger: 'blur' }
+    { required: true, message: 'กรุณากรอกลำดับ', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (existingOrders.value.includes(value)) {
+          callback(new Error('ลำดับนี้มีการใช้งานแล้ว กรุณาเลือกลำดับอื่น'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
   ]
 }
 
@@ -264,6 +275,16 @@ const handleSubmit = async () => {
 }
 
 const loadBanner = async () => {
+  try {
+    const list = await getBanners()
+    if (isEdit.value) {
+      existingOrders.value = list.filter(b => String(b.id) !== String(route.params.id)).map(b => b.order)
+    } else {
+      existingOrders.value = list.map(b => b.order)
+      form.order = list.length + 1
+    }
+  } catch {}
+
   if (isEdit.value) {
     try {
       const data = await getBanner(route.params.id)

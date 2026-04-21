@@ -28,12 +28,12 @@
 
         <el-table-column prop="order" label="ลำดับ" width="80" align="center" />
 
-        <el-table-column label="รูปภาพ (Desktop / TH)" width="200">
+        <el-table-column label="รูปภาพ" width="120">
           <template #default="{ row }">
             <el-image
               :src="row.imageDesktop?.th || row.imageDesktop"
               fit="cover"
-              style="width: 160px; height: 60px; border-radius: 4px;"
+              style="width: 140px; height: 100px; border-radius: 4px;"
             >
               <template #error>
                 <div class="image-placeholder">ไม่มีรูป</div>
@@ -75,19 +75,32 @@
       </el-table>
     </div>
 
-    <div v-if="hasUnsavedChanges" class="floating-save">
-      <el-button type="success" size="large" :loading="savingOrder" @click="saveOrder">
-        <el-icon><Check /></el-icon>
-        <span style="margin-left: 8px;">บันทึกลำดับ</span>
-      </el-button>
-    </div>
+    <!-- Bottom Action Bar -->
+    <transition name="bar-slide">
+      <div v-if="hasUnsavedChanges" class="bottom-action-bar">
+        <div class="bar-info">
+          <el-icon class="bar-info__icon"><WarningFilled /></el-icon>
+          <span>มีการเปลี่ยนแปลงลำดับที่ยังไม่ได้บันทึก</span>
+        </div>
+        <div class="bar-actions">
+          <button class="btn-cancel" :disabled="savingOrder" @click="cancelChanges">
+            ยกเลิก
+          </button>
+          <button class="btn-save" :disabled="savingOrder" @click="saveOrder">
+            <span v-if="savingOrder" class="btn-save__spinner" />
+            <el-icon v-else><Check /></el-icon>
+            <span>{{ savingOrder ? 'กำลังบันทึก...' : 'บันทึกลำดับ' }}</span>
+          </button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Rank, Check } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Rank, Check, WarningFilled } from '@element-plus/icons-vue'
 import Sortable from 'sortablejs'
 import { useApi } from '@/composables/useApi'
 
@@ -97,12 +110,21 @@ const tableRef = ref(null)
 const loading = ref(false)
 const items = ref([])
 const hasUnsavedChanges = ref(false)
+const originalItems = ref([])
+
+const cancelChanges = () => {
+  items.value = originalItems.value.map(i => ({ ...i }))
+  items.value.forEach((item, idx) => { item.order = idx + 1 })
+  hasUnsavedChanges.value = false
+}
+
 const savingOrder = ref(false)
 
 const fetchItems = async () => {
   loading.value = true
   try {
     items.value = await getAsapReadyItems()
+    originalItems.value = items.value.map(i => ({ ...i }))
   } catch {
     ElMessage.error('ไม่สามารถโหลดข้อมูลได้')
   } finally {
@@ -136,11 +158,25 @@ const handleDelete = async (row) => {
 }
 
 const saveOrder = async () => {
+  try {
+    await ElMessageBox.confirm(
+      'บันทึกลำดับการแสดงผลใหม่?',
+      'ยืนยัน',
+      {
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก',
+        distinguishCancelAndClose: true
+      }
+    )
+  } catch {
+    return
+  }
   savingOrder.value = true
   try {
     const newOrderIds = items.value.map(i => i.id)
     await reorderAsapReadyItems(newOrderIds)
     ElMessage.success('บันทึกลำดับเรียบร้อย')
+    originalItems.value = items.value.map(i => ({ ...i }))
     hasUnsavedChanges.value = false
   } catch {
     ElMessageBox.alert('ทำรายการไม่สำเร็จ กรุณาลองใหม่', 'แจ้งเตือน', {
@@ -200,8 +236,8 @@ onMounted(() => {
 }
 
 .image-placeholder {
-  width: 160px;
-  height: 60px;
+  width: 140px;
+  height: 100px;
   background: #f5f5f5;
   border-radius: 4px;
   display: flex;
@@ -211,18 +247,124 @@ onMounted(() => {
   font-size: 11px;
 }
 
-.floating-save {
+.bottom-action-bar {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 999;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  animation: slideUp 0.3s ease-out;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  z-index: 99;
+  background: #fff;
+  border-top: 1px solid #E5E7EB;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+
+  .bar-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 32px;
+    background: #FFFBEB;
+    border-bottom: 1px solid #FDE68A;
+    font-size: 13px;
+    color: #92400E;
+
+    &__icon {
+      font-size: 14px;
+      color: #D97706;
+      flex-shrink: 0;
+    }
+  }
+
+  .bar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+  }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 24px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  color: #6B7280;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: #9CA3AF;
+    background: #F9FAFB;
+    color: #374151;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 28px;
+  border: none;
+  border-radius: 8px;
+  background: #FF595A;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(255, 89, 90, 0.3), 0 1px 2px rgba(255, 89, 90, 0.2);
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #E54849;
+    box-shadow: 0 4px 10px rgba(255, 89, 90, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(255, 89, 90, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &__spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+}
+
+.bar-slide-enter-active,
+.bar-slide-leave-active {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.bar-slide-enter-from,
+.bar-slide-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

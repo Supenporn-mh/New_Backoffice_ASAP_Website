@@ -15,31 +15,9 @@
       <div class="form-section">
         <div class="form-section-title">ข้อมูลติดต่อ</div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="เบอร์โทรศัพท์" prop="phone">
-              <el-input v-model="form.phone" placeholder="02-xxx-xxxx" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="อีเมล" prop="email">
-              <el-input v-model="form.email" placeholder="contact@example.com" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="LINE ID" prop="lineId">
-              <el-input v-model="form.lineId" placeholder="@lineId" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="เวลาทำการ" prop="workingHours">
-              <el-input v-model="form.workingHours" placeholder="จันทร์-ศุกร์ 08:00-18:00 น." />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="ชื่อบริษัท" prop="companyName">
+          <el-input v-model="form.companyName" placeholder="กรอกชื่อบริษัท" />
+        </el-form-item>
 
         <el-form-item label="ที่อยู่" prop="address">
           <el-input
@@ -50,17 +28,43 @@
           />
         </el-form-item>
 
-        <el-form-item label="Google Maps Embed Code" prop="mapEmbed">
-          <el-input
-            v-model="form.mapEmbed"
-            type="textarea"
-            :rows="4"
-            placeholder='<iframe src="https://www.google.com/maps/embed?..." ...></iframe>'
-          />
-          <div class="field-hint">
-            * วางโค้ด iframe จาก Google Maps
-          </div>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="เบอร์โทรศัพท์" prop="phone">
+              <el-input v-model="form.phone" placeholder="02-xxx-xxxx" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">โซเชียลมีเดีย</div>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="LINE ชื่อ" prop="lineId">
+              <el-input v-model="form.lineId" placeholder="@asapcarrental" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="LINE Link" prop="lineUrl">
+              <el-input v-model="form.lineUrl" placeholder="https://line.me/..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="Facebook ชื่อเพจ" prop="facebook">
+              <el-input v-model="form.facebook" placeholder="asap Car Rental" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="Facebook Link" prop="facebookUrl">
+              <el-input v-model="form.facebookUrl" placeholder="https://facebook.com/..." />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </div>
 
       <div class="form-actions">
@@ -85,32 +89,19 @@ const saving = ref(false)
 const isDirty = ref(false)
 
 const form = reactive({
-  heroImage: '',
-  phone: '',
-  email: '',
-  lineId: '',
+  companyName: '',
   address: '',
-  mapEmbed: '',
-  workingHours: ''
+  phone: '',
+  lineId: '',
+  lineUrl: '',
+  facebook: '',
+  facebookUrl: ''
 })
 
 watch(() => form, () => { isDirty.value = true }, { deep: true })
 
 const rules = {
-  phone: [{ required: true, message: 'กรุณากรอกเบอร์โทรศัพท์', trigger: 'blur' }],
-  email: [
-    { required: true, message: 'กรุณากรอกอีเมล', trigger: 'blur' },
-    { type: 'email', message: 'รูปแบบอีเมลไม่ถูกต้อง', trigger: 'blur' }
-  ],
   address: [{ required: true, message: 'กรุณากรอกที่อยู่', trigger: 'blur' }]
-}
-
-const handleImageChange = (file) => {
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    form.heroImage = e.target.result
-  }
-  reader.readAsDataURL(file.raw)
 }
 
 const loadData = async () => {
@@ -119,7 +110,7 @@ const loadData = async () => {
     const data = await getContactUs()
     Object.assign(form, data)
     nextTick(() => { isDirty.value = false })
-  } catch (error) {
+  } catch {
     ElMessage.error('ไม่สามารถโหลดข้อมูลได้')
   } finally {
     loading.value = false
@@ -128,7 +119,6 @@ const loadData = async () => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-
   await formRef.value.validate(async (valid) => {
     if (valid) {
       saving.value = true
@@ -136,7 +126,7 @@ const handleSubmit = async () => {
         await updateContactUs(form)
         ElMessage.success('บันทึกข้อมูลสำเร็จ')
         isDirty.value = false
-      } catch (error) {
+      } catch {
         ElMessage.error('เกิดข้อผิดพลาด กรุณาลองใหม่')
       } finally {
         saving.value = false
@@ -161,89 +151,6 @@ onMounted(() => {
     padding-bottom: 12px;
     border-bottom: 1px solid #eee;
   }
-}
-
-.image-upload-wrapper {
-  width: 100%;
-  max-width: 600px;
-}
-
-.image-uploader {
-  :deep(.el-upload) {
-    width: 100%;
-  }
-}
-
-.image-preview {
-  width: 100%;
-  height: 200px;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid #ddd;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .image-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    opacity: 0;
-    transition: opacity 0.2s;
-    cursor: pointer;
-
-    .el-icon {
-      font-size: 24px;
-      margin-bottom: 4px;
-    }
-  }
-
-  &:hover .image-overlay {
-    opacity: 1;
-  }
-}
-
-.upload-placeholder {
-  width: 100%;
-  height: 200px;
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  cursor: pointer;
-  transition: border-color 0.2s;
-
-  &:hover {
-    border-color: #FF595A;
-    color: #FF595A;
-  }
-
-  .el-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-  }
-}
-
-.image-hint,
-.field-hint {
-  font-size: 12px;
-  color: #999;
-  margin-top: 8px;
 }
 
 .form-actions {

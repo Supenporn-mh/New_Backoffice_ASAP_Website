@@ -80,7 +80,7 @@
       <div class="form-section">
         <div class="form-section-title">รูปภาพโปรโมชัน (Desktop) <span class="size-hint">แนะนำขนาด 736 x 507 px</span></div>
         <el-tabs type="card" class="lang-tabs">
-          <el-tab-pane label="🇹🇭 ไทย">
+          <el-tab-pane label="TH ไทย">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleImageChange(f, 'th')">
@@ -95,7 +95,7 @@
               <el-input v-model="form.imageAlt.th" placeholder="Alt Text (ภาษาไทย)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇬🇧 EN">
+          <el-tab-pane label="EN อังกฤษ">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleImageChange(f, 'en')">
@@ -110,7 +110,7 @@
               <el-input v-model="form.imageAlt.en" placeholder="Alt Text (English)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇨🇳 中文">
+          <el-tab-pane label="CN จีน">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleImageChange(f, 'zh')">
@@ -132,7 +132,7 @@
       <div class="form-section">
         <div class="form-section-title">รูปภาพโปรโมชัน (Mobile) <span class="size-hint">แนะนำขนาด 390 x 270 px</span></div>
         <el-tabs type="card" class="lang-tabs">
-          <el-tab-pane label="🇹🇭 ไทย">
+          <el-tab-pane label="TH ไทย">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleMobileImageChange(f, 'th')">
@@ -147,7 +147,7 @@
               <el-input v-model="form.imageAltMobile.th" placeholder="Alt Text (ภาษาไทย)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇬🇧 EN">
+          <el-tab-pane label="EN อังกฤษ">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleMobileImageChange(f, 'en')">
@@ -162,7 +162,7 @@
               <el-input v-model="form.imageAltMobile.en" placeholder="Alt Text (English)" class="mt-2" />
             </div>
           </el-tab-pane>
-          <el-tab-pane label="🇨🇳 中文">
+          <el-tab-pane label="CN จีน">
             <div class="image-upload-wrapper">
               <el-upload class="image-uploader" :show-file-list="false" :auto-upload="false" accept="image/*"
                 @change="(f) => handleMobileImageChange(f, 'zh')">
