@@ -183,6 +183,13 @@ const routes = [
         component: () => import('@/views/car/CarCategoryList.vue'),
         meta: { title: 'จัดการประเภทกลุ่มรถ' }
       },
+      // Car Featured Sorting
+      {
+        path: 'car-featured-sorting',
+        name: 'CarFeaturedSorting',
+        component: () => import('@/views/car/CarFeaturedSorting.vue'),
+        meta: { title: 'การแสดงผลรถยนต์' }
+      },
       // Static Pages
       {
         path: 'pages/contact',

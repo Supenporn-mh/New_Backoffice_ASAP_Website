@@ -69,6 +69,10 @@
           <el-icon><FolderOpened /></el-icon>
           <span>ประเภทกลุ่มรถ</span>
         </el-menu-item>
+        <el-menu-item index="/car-featured-sorting">
+          <el-icon><Trophy /></el-icon>
+          <span>การแสดงผลรถยนต์</span>
+        </el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu index="content">

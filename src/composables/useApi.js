@@ -1190,6 +1190,18 @@ const mockCarBrands = ref([
   }
 ])
 
+const mockBestDeals = ref([
+  { id: 1, brandId: 1, brandName: 'Toyota', modelId: 2, modelName: 'Vios', order: 1 },
+  { id: 2, brandId: 2, brandName: 'Honda', modelId: 4, modelName: 'City', order: 2 },
+  { id: 3, brandId: 1, brandName: 'Toyota', modelId: 15, modelName: 'Fortuner', order: 3 }
+])
+
+const mockPopularModels = ref([
+  { id: 1, brandId: 1, brandName: 'Toyota', modelId: 1, modelName: 'Revo', order: 1 },
+  { id: 2, brandId: 2, brandName: 'Honda', modelId: 6, modelName: 'Civic', order: 2 },
+  { id: 3, brandId: 3, brandName: 'Deepal', modelId: 7, modelName: 'S07', order: 3 }
+])
+
 export const useApi = () => {
   // ===== ASAP พร้อมให้บริการ =====
   const getAsapReadyItems = async () => {
@@ -2111,6 +2123,25 @@ export const useApi = () => {
     return null
   }
 
+  // Best Deals & Popular Models
+  const getBestDeals = async () => {
+    return [...mockBestDeals.value].sort((a, b) => a.order - b.order)
+  }
+
+  const updateBestDeals = async (items) => {
+    mockBestDeals.value = items.map((item, index) => ({ ...item, order: index + 1 }))
+    return [...mockBestDeals.value]
+  }
+
+  const getPopularModels = async () => {
+    return [...mockPopularModels.value].sort((a, b) => a.order - b.order)
+  }
+
+  const updatePopularModels = async (items) => {
+    mockPopularModels.value = items.map((item, index) => ({ ...item, order: index + 1 }))
+    return [...mockPopularModels.value]
+  }
+
   const getProfile = async () => {
     return {
       firstName: 'Admin',
@@ -2272,7 +2303,12 @@ export const useApi = () => {
     createAsapReadyItem,
     updateAsapReadyItem,
     deleteAsapReadyItem,
-    reorderAsapReadyItems
+    reorderAsapReadyItems,
+    // Best Deals & Popular Models
+    getBestDeals,
+    updateBestDeals,
+    getPopularModels,
+    updatePopularModels
 
   }
 }
